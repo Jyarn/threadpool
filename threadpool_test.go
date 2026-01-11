@@ -130,3 +130,17 @@ func TestShutdownNow(t *testing.T) {
 		t.Errorf("Expected counter to be less than 100 after immediate shutdown, got %d", counter)
 	}
 }
+
+func TestSubmitAfterShutdown(t *testing.T) {
+	tp := New(2)
+	tp.Start()
+
+	tp.Shutdown()
+
+	// Submit after shutdown should return false
+	result := tp.Submit(func() {})
+	if result {
+		t.Error("Expected Submit to return false after shutdown")
+	}
+}
+

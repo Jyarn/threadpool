@@ -62,9 +62,9 @@ Creates a new thread pool with the specified number of workers. If workers is <=
 
 Starts the worker pool. Must be called before submitting jobs.
 
-### `Submit(job Job)`
+### `Submit(job Job) bool`
 
-Submits a job (function) to be executed by the worker pool.
+Submits a job (function) to be executed by the worker pool. Returns `true` if the job was successfully submitted, `false` if the pool is already shutdown.
 
 ### `Shutdown()`
 

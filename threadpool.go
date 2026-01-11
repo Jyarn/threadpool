@@ -14,6 +14,8 @@ type ThreadPool struct {
 	wg         sync.WaitGroup
 	once       sync.Once
 	shutdownCh chan struct{}
+	mu         sync.RWMutex
+	isShutdown bool
 }
 
 // New creates a new ThreadPool with the specified number of workers
@@ -53,13 +55,32 @@ func (tp *ThreadPool) worker() {
 }
 
 // Submit adds a job to the queue for execution
-func (tp *ThreadPool) Submit(job Job) {
-	tp.jobQueue <- job
+// Returns false if the pool is already shutdown, true otherwise
+func (tp *ThreadPool) Submit(job Job) bool {
+	tp.mu.RLock()
+	defer tp.mu.RUnlock()
+	
+	if tp.isShutdown {
+		return false
+	}
+	
+	select {
+	case tp.jobQueue <- job:
+		return true
+	default:
+		// Queue is full, try with blocking send
+		tp.jobQueue <- job
+		return true
+	}
 }
 
 // Shutdown gracefully shuts down the threadpool, waiting for all jobs to complete
 func (tp *ThreadPool) Shutdown() {
 	tp.once.Do(func() {
+		tp.mu.Lock()
+		tp.isShutdown = true
+		tp.mu.Unlock()
+		
 		close(tp.jobQueue)
 		tp.wg.Wait()
 		close(tp.shutdownCh)
@@ -69,7 +90,12 @@ func (tp *ThreadPool) Shutdown() {
 // ShutdownNow immediately shuts down the threadpool without waiting for jobs
 func (tp *ThreadPool) ShutdownNow() {
 	tp.once.Do(func() {
-		close(tp.shutdownCh)
+		tp.mu.Lock()
+		tp.isShutdown = true
+		tp.mu.Unlock()
+		
+		// Close jobQueue first so workers exit cleanly
 		close(tp.jobQueue)
+		close(tp.shutdownCh)
 	})
 }
