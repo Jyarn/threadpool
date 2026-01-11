@@ -126,8 +126,9 @@ func TestShutdownNow(t *testing.T) {
 	tp.ShutdownNow()
 
 	// Counter should be less than 100 since we shut down immediately
-	if counter >= 100 {
-		t.Errorf("Expected counter to be less than 100 after immediate shutdown, got %d", counter)
+	finalCount := atomic.LoadInt32(&counter)
+	if finalCount >= 100 {
+		t.Errorf("Expected counter to be less than 100 after immediate shutdown, got %d", finalCount)
 	}
 }
 
