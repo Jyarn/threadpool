@@ -4,13 +4,13 @@
 #include <stdint.h>
 
 typedef void* ThreadPtr;
-
-typedef void(*Task)(void);
+typedef void(*Task)(void*);
 
 ThreadPtr thpl_push(Task, void*);
 ThreadPtr thpl_self(void);
+
 void thpl_yield(void);
 void thpl_init(int64_t);
 
-#endif
 
+#endif

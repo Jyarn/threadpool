@@ -6,11 +6,11 @@
 #include "threadpool.h"
 
 typedef enum {
-    UNINITIALIZED = 0,
     NOT_STARTED,
     RUNNING,
     IDLE,
-    DEAD
+    SUSPENDED,
+    DEAD,
 } Status;
 
 typedef struct s_thread {
@@ -23,5 +23,7 @@ typedef struct s_thread {
     char stack_top[];
 } Thread;
 
-#endif
+void unsuspend_thread(Thread*);
+void suspend_thread(Thread*, Thread*);
 
+#endif

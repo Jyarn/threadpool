@@ -20,6 +20,28 @@ int64_t magic_num;
 
 void swap_thread(Thread*, Thread*);
 
+
+void
+unsuspend_thread(Thread* thread)
+{
+    assert(thread);
+    assert(thpl_self() != thread);
+    assert(thread->status == SUSPENDED);
+    assert(!thread->next);
+    enqueue(&idle_queue, thread);
+}
+
+void
+suspend_thread(Thread* self, Thread* holder)
+{
+    assert(self);
+    assert(thpl_self() == self);
+    assert(self->status == RUNNING);
+    assert(!self->next);
+    self->status = SUSPENDED;
+    swap_thread(self, holder);
+}
+
 void
 thpl_init(int64_t _magic_num)
 {

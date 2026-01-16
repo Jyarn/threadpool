@@ -7,6 +7,7 @@ void
 enqueue(Queue* q, Thread* t)
 {
     assert(t);
+    assert(!t->next);
     assert(q);
 
     if (q->head)  // append to end
@@ -30,5 +31,6 @@ dequeue(Queue* q)
     Thread* r = q->head;
     q->head = q->head->next;
     if (!q->head) q->last = NULL;
+    r->next = NULL;
     return r;
 }

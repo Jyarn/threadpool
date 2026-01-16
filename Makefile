@@ -2,23 +2,23 @@ CC=gcc
 AR=ar
 AS=as
 
-CFLAGS=-Wall -Wpedantic -Wextra -ggdb
+CFLAGS=-Wall -Wpedantic -Wextra
 LFLAGS=
 
-PREFIX=
+PREFIX=.
 OBJ_DIR=$(PREFIX)/obj
 INC_DIR=$(PREFIX)/include
 LIB_DIR=$(PREFIX)/lib
 
-OBJ=queue.o threadpool.o context.o
-INC=threadpool.h
+OBJ=context.o lock.o queue.o sync.o threadpool.o
+INC=threadpool.h lock.h spin.h
 EXE=libthreadpool.a
 
 EXP_EXE=$(LIB_DIR)/$(EXE)
 EXP_OBJ=$(addprefix $(OBJ_DIR)/,$(OBJ))
 EXP_INC=$(addprefix $(INC_DIR)/,$(INC))
 
-#.SILENT:
+.SILENT:
 
 .PHONY: build clean
 
@@ -48,6 +48,4 @@ $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 
 clean:
-	rm -rv $(OBJ_DIR)
-	rm -rv $(INC_DIR)
-	rm -rv $(LIB_DIR)
+	rm -rv $(EXP_EXE) $(EXP_OBJ) $(EXP_INC)
