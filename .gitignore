@@ -1,3 +1,5 @@
 include
 obj
 lib
+test
+!test/*.c

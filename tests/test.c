@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "threadpool.h"
-#include "lock.h"
-#include "spin.h"
+#include "../threadpool.h"
+#include "../lock.h"
+#include "../spin.h"
 
-#include "tests/schedule_and_yield.c"
+#include "schedule_and_yield.c"
 
 const char* current_test_group;
 int n_failed = 0;

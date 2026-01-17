@@ -18,23 +18,26 @@ EXP_EXE=$(LIB_DIR)/$(EXE)
 EXP_OBJ=$(addprefix $(OBJ_DIR)/,$(OBJ))
 EXP_INC=$(addprefix $(INC_DIR)/,$(INC))
 
-.SILENT:
+#.SILENT:
 
-.PHONY: build clean
+.PHONY: run build clean
 
-build: $(INC_DIR) $(LIB_DIR) $(EXP_OBJ) $(EXP_INC) $(EXP_EXE)
+build: $(LIB_DIR) $(OBJ_DIR) $(INC_DIR) $(EXP_EXE) $(EXP_INC)
 
-$(EXP_EXE): $(LIB_DIR) $(EXP_OBJ) $(EXP_INC)
+run:
+	make -C tests
+
+$(EXP_EXE): $(EXP_OBJ)
 	$(AR) -rcs $(EXP_EXE) $(EXP_OBJ)
 
 
-$(OBJ_DIR)/%.o: %.s $(OBJ_DIR)
+$(OBJ_DIR)/%.o: %.s
 	$(AS) $< -o $@
 
-$(OBJ_DIR)/%.o: %.c *.h $(OBJ_DIR)
+$(OBJ_DIR)/%.o: %.c *.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(INC_DIR)/%.h: %.h $(INC_DIR)
+$(INC_DIR)/%.h: %.h
 	cp -v $< $@
 
 
@@ -48,4 +51,5 @@ $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 
 clean:
-	rm -rv $(EXP_EXE) $(EXP_OBJ) $(EXP_INC)
+	- rm -rv $(EXP_EXE) $(EXP_OBJ) $(EXP_INC)
+	- make -C tests clean
