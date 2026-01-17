@@ -2,15 +2,15 @@ CC=gcc
 AR=ar
 AS=as
 
-CFLAGS=-Wall -Wpedantic -Wextra
-LFLAGS=
+CFLAGS +=-Wall -Wpedantic -Wextra
+LFLAGS +=
 
 PREFIX=.
 OBJ_DIR=$(PREFIX)/obj
 INC_DIR=$(PREFIX)/include
 LIB_DIR=$(PREFIX)/lib
 
-OBJ=context.o lock.o queue.o sync.o threadpool.o
+OBJ=context.o lock.o sync.o threadpool.o
 INC=threadpool.h lock.h spin.h
 EXE=libthreadpool.a
 

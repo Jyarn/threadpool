@@ -5,9 +5,9 @@
 
 typedef void* ThreadPtr;
 typedef void(*Task)(void*);
+typedef uint64_t ThreadId;
 
-ThreadPtr thpl_push(Task, void*);
-ThreadPtr thpl_self(void);
+ThreadId thpl_push(Task, void*);
 
 void thpl_yield(void);
 void thpl_init(int64_t);

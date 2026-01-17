@@ -5,25 +5,17 @@
 
 #include "threadpool.h"
 
-typedef enum {
-    NOT_STARTED,
-    RUNNING,
-    IDLE,
-    SUSPENDED,
-    DEAD,
-} Status;
-
 typedef struct s_thread {
     int64_t magic_num;
-    Status status;
     void* sp;
-    void* args;
-    Task task;
+    ThreadId tid;
     struct s_thread* next;
     char stack_top[];
 } Thread;
 
 void unsuspend_thread(Thread*);
 void suspend_thread(Thread*, Thread*);
+
+Thread* get_tcb(void);
 
 #endif

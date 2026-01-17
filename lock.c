@@ -17,7 +17,7 @@ thpl_lock_init(Lock* lock)
 void
 thpl_lock_enter(Lock* lock, Thread* self)
 {
-    assert(thpl_self() == lock->holder);
+    assert(get_tcb() == lock->holder);
     if (thpl_spin_try(&lock->_spin))
     {
         assert(lock->holder);
@@ -36,7 +36,7 @@ thpl_lock_enter(Lock* lock, Thread* self)
 void
 thpl_lock_exit(Lock* lock)
 {
-    assert(thpl_self() == lock->holder);
+    assert(get_tcb() == lock->holder);
     thpl_spin_exit(&lock->_spin);
 
     if (lock->waiters)
