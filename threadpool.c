@@ -12,6 +12,7 @@
 #define STACK_SIZE 1024 * 4
 #define TCB_OFF STACK_SIZE - sizeof(Thread)
 
+
 struct {
     Thread* next;
     Thread* last;
@@ -22,11 +23,11 @@ typedef struct s_args {
     Task task;
     ThreadId tid;
     struct s_args* next;
-} Args;
+} TaskArgs;
 
 struct {
-    Args* next;
-    Args* last;
+    TaskArgs* next;
+    TaskArgs* last;
 } uninit_queue;
 
 
@@ -37,8 +38,7 @@ int64_t magic_num;
 ThreadId next_tid = 0;
 
 
-
-Thread* init_thread(Args*);
+Thread* init_thread(ThreadId, Thread*);
 void swap_threads(Thread*, Thread*);
 
 
@@ -89,7 +89,7 @@ ThreadId
 thpl_push(Task task, void* task_args)
 {
     assert(get_tcb()->magic_num == magic_num);
-    Args* args = malloc(sizeof(Args));
+    TaskArgs* args = malloc(sizeof(TaskArgs));
     args->args = task_args;
     args->task = task;
     args->tid = next_tid++;
@@ -105,21 +105,25 @@ thpl_push(Task task, void* task_args)
 }
 
 Thread*
-init_thread(Args* args)
+talloc(void)
 {
-    assert(args != NULL);
-    Thread* new_thread = mmap(
-            NULL,
-            STACK_SIZE,
-            PROT_READ | PROT_WRITE,
-            MAP_SHARED | MAP_ANONYMOUS | MAP_STACK,
-            -1,
-            0
-            ) + TCB_OFF;
+    char* page = mmap(NULL,
+		STACK_SIZE,
+		PROT_READ | PROT_WRITE,
+		MAP_SHARED | MAP_ANONYMOUS | MAP_STACK,
+		-1,
+		0
+		);
+    page += TCB_OFF;
+    return (Thread*) page;
+}
 
+Thread*
+init_thread(ThreadId tid, Thread* new_thread)
+{
     new_thread->magic_num = magic_num;
     new_thread->sp = new_thread->stack_top - sizeof(Thread);
-    new_thread->tid = args->tid;
+    new_thread->tid = tid;
     new_thread->next = NULL;
     return new_thread;
 }
@@ -138,12 +142,13 @@ thpl_yield(void)
     }
     else if (uninit_queue.next)
     {
-        Args* args = uninit_queue.next;
+        TaskArgs* args = uninit_queue.next;
         uninit_queue.next = uninit_queue.next->next;
 
         void* task_args = args->args;
         Task task = args->task;
-        Thread* new_thread = init_thread(args);
+
+        Thread* new_thread = init_thread(args->tid, talloc());
         free(args);
 
         assert(new_thread->magic_num == magic_num);
@@ -186,6 +191,9 @@ get_tcb(void)
 _Noreturn void
 kill_task(void)
 {
+    Thread* from = get_tcb();
+    assert(from->next == NULL);
+
     Thread* to = &main_thread;
     if (idle_queue.next)
     {
@@ -194,11 +202,11 @@ kill_task(void)
     }
     else if (uninit_queue.next)
     {
-        Args* args = uninit_queue.next;
+        TaskArgs* args = uninit_queue.next;
         uninit_queue.next = uninit_queue.next->next;
 
-        to = init_thread(args);
-
+        // recycle tcb
+        to = init_thread(args->tid, from);
         void* task_args = args->args;
         Task task = args->task;
 
@@ -208,5 +216,29 @@ kill_task(void)
 
     assert(to);
     assert(to->magic_num == magic_num);
-    swap_tasks_kill(to->sp);
+
+    // call munmap on the current stack page
+    // need to inline because when we free the thread we can't write to the stack
+    asm volatile inline (
+        "mov %[free], %%rdi\n\t"
+        "mov $1, %%rsi\n\t"
+        "mov $11, %%rax\n\t"
+        "syscall\n\t"
+        "cmp $0, %%rax\n\t"
+        "jne panic\n\t"
+        "mov %[new_stack], %%rdi\n\t"
+        "jmp swap_tasks_kill"
+        :
+        : [free] "r" (from->stack_top - STACK_SIZE), [new_stack] "r" (to->sp)
+        : "r11", "rcx", "rax", "rdi", "rsi", "memory"
+    );
+}
+
+_Noreturn
+void
+panic(void)
+{
+    char err_msg[] = "munmap failed :D :D :D\n";
+    write(STDOUT_FILENO, err_msg, sizeof(err_msg));
+    exit(-1);
 }
